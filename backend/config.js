@@ -4,6 +4,8 @@ export const DEFAULTS = {
   PORT: 1234
 }
 
-export const OPENAI = {
-  MODEL: process.env.OPENAI_MODEL ?? 'gpt-4o-mini'
+export const AI = {
+  PROVIDER: 'groq',
+  MODEL: process.env.GROQ_MODEL ?? 'llama3-8b-8192',
+  BASE_URL: 'https://api.groq.com/openai/v1'
 }

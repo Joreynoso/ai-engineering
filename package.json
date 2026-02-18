@@ -18,5 +18,8 @@
   "directories": {
     "example": "examples"
   },
-  "description": ""
+  "description": "",
+  "dependencies": {
+    "dotenv": "^17.3.1"
+  }
 }

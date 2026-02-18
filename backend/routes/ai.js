@@ -1,18 +1,27 @@
-process.loadEnvFile()
+
 
 // imports
+import 'dotenv/config'
 import { Router } from 'express'
-import OpenAi from 'openai'
 import { JobModel } from '../models/job.js'
+import OpenAI from 'openai'
+import { AI } from '../config.js'
+
+// validar que exista la variable de entorno
+if (!process.env.GROQ_API_KEY) {
+    throw new Error('Missing GROQ_API_KEY')
+}
 
 // crear instancia
 export const aiRouter = Router()
 
 // crear instancia de openai
-const openai = new OpenAi({
-    apiKey: process.env.OPENAI_API_KEY
+const openai = new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: AI.BASE_URL
 })
 
+// ruta publica para consultar la ia
 aiRouter.get('/summary/:id', async (req, res) => {
     const { id } = req.params
     const job = await JobModel.getById(id)
@@ -38,7 +47,8 @@ aiRouter.get('/summary/:id', async (req, res) => {
         // temrino usaro para referirse a la charla que tenemos
         // con la inteligencia artificial
         const completion = await openai.chat.completions.create({
-            model: ''
+            model: AI.MODEL,
+            temperature: 0.3,
             messages: [
                 {
                     role: 'system',
@@ -52,12 +62,11 @@ aiRouter.get('/summary/:id', async (req, res) => {
         })
 
         // chekear respuesta
-        console.log('OpenAi response', completion)
+        console.log('AI summary generated for job:', id)
 
         // crear sumario con respuesta de Openai
-        const summary = completion.choices[0].message.content.trim()
+        const summary = completion.choices?.[0]?.message?.content?.trim()
 
-        // devolver error si algo sale mal al generar el summary
         if (!summary) {
             return res.status(502).json({ message: 'No summary generating' })
         }
