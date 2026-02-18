@@ -3,3 +3,47 @@
   margin: 1rem auto;
   padding: 1rem;
 }
+
+.searchPage {
+  min-height: 100vh;
+  background-color: var(--background);
+  padding-bottom: 5rem;
+}
+
+.searchResultsSection {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.resultsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.resultsTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+}
+
+.resultsCount {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.loadingWrapper,
+.emptyWrapper {
+  text-align: center;
+  padding: 5rem 2rem;
+  color: var(--text-muted);
+}

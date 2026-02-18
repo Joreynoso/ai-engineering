@@ -1,0 +1,117 @@
+.header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(6, 24, 42, 0.8);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 72px;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-decoration: none;
+    transition: transform 0.2s;
+}
+
+.logo:hover {
+    transform: scale(1.02);
+}
+
+.logoIcon {
+    width: 32px;
+    height: 32px;
+    color: var(--primary-light);
+}
+
+.logoText {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: white;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.nav {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+}
+
+.link {
+    text-decoration: none;
+    color: var(--text-secondary);
+    font-weight: 500;
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    position: relative;
+    padding-block: 0.5rem;
+}
+
+.link:hover {
+    color: white;
+}
+
+.activeLink {
+    color: white;
+}
+
+.activeLink::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: var(--primary-light);
+    border-radius: 2px;
+}
+
+.userSection {
+    display: flex;
+    align-items: center;
+    gap: 1.25rem;
+}
+
+.authButton {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 0.625rem 1.25rem;
+    border-radius: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+}
+
+.authButton:hover {
+    background: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+.logoutButton {
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+}
+
+.logoutButton:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 768px) {
+    .nav {
+        display: none;
+        /* TODO: Implement mobile menu if needed, for now just simplified */
+    }
+}

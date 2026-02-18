@@ -6,7 +6,7 @@ import { SearchFormSection } from '../components/SearchFormSection.jsx'
 import { JobListings } from '../components/JobListings.jsx'
 import styles from './Search.module.css'
 
-const RESULTS_PER_PAGE = 4
+const RESULTS_PER_PAGE = 5 // Aumentado ligeramente para mejor vista
 
 const useFilters = () => {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -23,7 +23,7 @@ const useFilters = () => {
 
   const [currentPage, setCurrentPage] = useState(() => {
     const page = Number(searchParams.get('page'))
-    return Number.isNaN(page) ? page : 1
+    return isNaN(page) ? 1 : Math.max(1, page)
   })
 
   const [jobs, setJobs] = useState([])
@@ -46,7 +46,7 @@ const useFilters = () => {
         params.append('offset', offset)
 
         const queryParams = params.toString()
-      
+
         const response = await fetch(`${import.meta.env.VITE_API_URL}/jobs?${queryParams}`)
         const json = await response.json()
 
@@ -64,16 +64,12 @@ const useFilters = () => {
 
   useEffect(() => {
     setSearchParams(() => {
-      // Clear all existing params
       const params = new URLSearchParams()
-      // Add only needed params
       if (textToFilter) params.set('text', textToFilter)
       if (filters.technology) params.set('technology', filters.technology)
       if (filters.location) params.set('type', filters.location)
       if (filters.experienceLevel) params.set('level', filters.experienceLevel)
-
       if (currentPage > 1) params.set('page', currentPage)
-
       return params
     })
 
@@ -83,6 +79,7 @@ const useFilters = () => {
 
   const handlePageChange = (page) => {
     setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   const handleSearch = (filters) => {
@@ -123,15 +120,8 @@ export default function SearchPage() {
     handleTextFilter
   } = useFilters()
 
-  const title = loading
-    ? `Cargando... - DevJobs`
-    : `Resultados: ${total}, Página ${currentPage} - DevJobs`
-
   return (
-    <main>
-      <title>{title}</title>
-      <meta name="description" content="Explora miles de oportunidades laborales en el sector tecnológico. Encuentra tu próximo empleo en DevJobs." />
-
+    <div className={styles.searchPage}>
       <SearchFormSection
         initialText={textToFilter}
         initialFilters={filters}
@@ -139,14 +129,45 @@ export default function SearchPage() {
         onTextFilter={handleTextFilter}
       />
 
-      <section className={styles.searchResults}>
-        <h2 style={{ textAlign: 'center' }}>Resultados de búsqueda</h2>
+      <section className={styles.searchResultsSection}>
+        <div className={styles.resultsHeader}>
+          <h2 className={styles.resultsTitle}>
+            {loading ? 'Buscando...' : `Resultados (${total})`}
+          </h2>
+          {!loading && <span className={styles.resultsCount}>Página {currentPage} de {totalPages || 1}</span>}
+        </div>
 
-        {
-          loading ? <p>Cargando empleos...</p> : <JobListings jobs={jobs} />
-        }
-        <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+        <div className={styles.grid}>
+          {
+            loading ? (
+              <div className={styles.loadingWrapper}>
+                <p>Cargando los mejores empleos para ti...</p>
+              </div>
+            ) : jobs.length === 0 ? (
+              <div className={styles.emptyWrapper}>
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem', opacity: 0.5 }}>
+                  <circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /><path d="M8 11h6" />
+                </svg>
+                <p>No se han encontrado empleos que coincidan con los criterios.</p>
+                <button
+                  onClick={() => { handleTextFilter(""); handleSearch({ technology: '', location: '', experienceLevel: '' }) }}
+                  style={{ background: 'none', border: 'none', color: 'var(--primary-light)', cursor: 'pointer', marginTop: '1rem', textDecoration: 'underline' }}
+                >
+                  Limpiar todos los filtros
+                </button>
+              </div>
+            ) : (
+              <JobListings jobs={jobs} />
+            )
+          }
+        </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
       </section>
-    </main>
+    </div>
   )
 }
