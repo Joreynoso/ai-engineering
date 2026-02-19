@@ -5,6 +5,7 @@ import snarkdown from 'snarkdown'
 import styles from './Detail.module.css'
 import { useAuthStore } from "../store/authStore"
 import { useFavoritesStore } from "../store/favoritesStore"
+import { useAiSummary } from '../hooks/useAiSummary'
 
 const API_URL = import.meta.env.VITE_API_URL
 
@@ -79,98 +80,81 @@ function DetailFavoriteButton({ jobId }) {
   )
 }
 
-function AISummary({ jobId }) {
-  const [summary, setSummary] = useState(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
+function AISummary({jobId}) {
+    const { summary, loading, error, generateSummary} = useAiSummary(jobId)
 
-  const generateSummary = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await fetch(`${API_URL}/ai/summary/${jobId}`)
-      if (!response.ok) throw new Error('Error al generar el resumen')
-      const data = await response.json()
-      setSummary(data.summary)
-    } catch {
-      setError('Error al generar el resumen')
-    } finally {
-      setLoading(false)
-    }
+    // render return
+    return (
+      <div className={`${styles.card} ${styles.aiCard}`}>
+        <div className={styles.aiTitle}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
+          AI Magic Summary
+        </div>
+
+        {summary ? (
+          <p className={styles.aiContent}>{summary}</p>
+        ) : (
+          <>
+            <p style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>¿No tienes tiempo? Deja que nuestra IA resuma los puntos clave para ti.</p>
+            <button
+              onClick={generateSummary}
+              disabled={loading}
+              className={styles.aiButton}
+            >
+              {loading ? 'Analizando oferta...' : 'Generar Resumen AI'}
+            </button>
+          </>
+        )}
+        {error && <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem' }}>{error}</p>}
+      </div>
+    )
   }
 
-  // render return
-  return (
-    <div className={`${styles.card} ${styles.aiCard}`}>
-      <div className={styles.aiTitle}>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path><path d="M5 3v4"></path><path d="M19 17v4"></path><path d="M3 5h4"></path><path d="M17 19h4"></path></svg>
-        AI Magic Summary
+  export default function JobDetail() {
+    const { jobId } = useParams()
+    const navigate = useNavigate()
+    const [job, setJob] = useState(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+      fetch(`${API_URL}/jobs/${jobId}`)
+        .then(res => res.ok ? res.json() : navigate('/not-found'))
+        .then(json => setJob(json))
+        .finally(() => setLoading(false))
+    }, [jobId, navigate])
+
+    if (loading) return (
+      <div className={styles.container}>
+        <div className={styles.loading}>
+          <p className={styles.loadingText}>Preparando detalles de la oferta...</p>
+        </div>
       </div>
+    )
 
-      {summary ? (
-        <p className={styles.aiContent}>{summary}</p>
-      ) : (
-        <>
-          <p style={{ marginBottom: '1rem', fontSize: '0.9rem', opacity: 0.8 }}>¿No tienes tiempo? Deja que nuestra IA resuma los puntos clave para ti.</p>
-          <button
-            onClick={generateSummary}
-            disabled={loading}
-            className={styles.aiButton}
-          >
-            {loading ? 'Analizando oferta...' : 'Generar Resumen AI'}
-          </button>
-        </>
-      )}
-      {error && <p style={{ color: '#ef4444', fontSize: '0.8rem', marginTop: '0.5rem' }}>{error}</p>}
-    </div>
-  )
-}
+    if (!job) return null
 
-export default function JobDetail() {
-  const { jobId } = useParams()
-  const navigate = useNavigate()
-  const [job, setJob] = useState(null)
-  const [loading, setLoading] = useState(true)
+    return (
+      <div className={styles.container}>
+        <DetailPageBreadCrumb jobTitle={job.titulo} />
 
-  useEffect(() => {
-    fetch(`${API_URL}/jobs/${jobId}`)
-      .then(res => res.ok ? res.json() : navigate('/not-found'))
-      .then(json => setJob(json))
-      .finally(() => setLoading(false))
-  }, [jobId, navigate])
+        <div className={styles.layout}>
+          <main className={styles.mainContent}>
+            <DetailPageHeader job={job} />
+            <JobSection title="Acerca de la oferta" content={job.content.description} />
+            <JobSection title="Responsabilidades" content={job.content.responsibilities} />
+            <JobSection title="Requisitos clave" content={job.content.requirements} />
+            <JobSection title="Sobre la empresa" content={job.content.about} />
+          </main>
 
-  if (loading) return (
-    <div className={styles.container}>
-      <div className={styles.loading}>
-        <p className={styles.loadingText}>Preparando detalles de la oferta...</p>
+          <aside className={styles.sidebar}>
+            <div className={`${styles.card} ${styles.actionsCard}`}>
+              <DetailApplyButton />
+              <DetailFavoriteButton jobId={job.id} />
+            </div>
+
+            <AISummary jobId={job.id} />
+          </aside>
+        </div>
       </div>
-    </div>
-  )
-
-  if (!job) return null
-
-  return (
-    <div className={styles.container}>
-      <DetailPageBreadCrumb jobTitle={job.titulo} />
-
-      <div className={styles.layout}>
-        <main className={styles.mainContent}>
-          <DetailPageHeader job={job} />
-          <JobSection title="Acerca de la oferta" content={job.content.description} />
-          <JobSection title="Responsabilidades" content={job.content.responsibilities} />
-          <JobSection title="Requisitos clave" content={job.content.requirements} />
-          <JobSection title="Sobre la empresa" content={job.content.about} />
-        </main>
-
-        <aside className={styles.sidebar}>
-          <div className={`${styles.card} ${styles.actionsCard}`}>
-            <DetailApplyButton />
-            <DetailFavoriteButton jobId={job.id} />
-          </div>
-
-          <AISummary jobId={job.id} />
-        </aside>
-      </div>
-    </div>
-  )
-}
+    )
+  }

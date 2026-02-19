@@ -7,6 +7,7 @@ import { aiRouter } from './routes/ai.js'
 const PORT = process.env.PORT ?? DEFAULTS.PORT
 const app = express()
 
+app.set('trust proxy', 1) // para que el rate limit funcione correctamente
 app.use(corsMiddleware())
 app.use(express.json())
 

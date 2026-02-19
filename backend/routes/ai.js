@@ -4,6 +4,7 @@
 import 'dotenv/config'
 import { Router } from 'express'
 import { JobModel } from '../models/job.js'
+import rateLimit from 'express-rate-limit'
 import OpenAI from 'openai'
 import { AI } from '../config.js'
 
@@ -12,8 +13,20 @@ if (!process.env.GROQ_API_KEY) {
     throw new Error('Missing GROQ_API_KEY')
 }
 
+// establecer el ratelimit
+const aiRateLimit = rateLimit({
+    windowMs: 60 * 1000, // 1 minuto
+    max: 5, // maximo 5 peticiones por ventana
+    message: 'Demasiadas peticiones, intenta de nuevo en 1 minuto',
+    legacyHeaders: false,
+    standardHeaders: 'draft-8',// devuelve headers standards RateLimit 
+})
+
 // crear instancia
 export const aiRouter = Router()
+
+// aplicar ratelimit a todas las rutas de ai
+aiRouter.use(aiRateLimit)
 
 // crear instancia de openai
 const openai = new OpenAI({
@@ -42,13 +55,15 @@ aiRouter.get('/summary/:id', async (req, res) => {
         `Requisitos: ${job.requisitos}`
     ].join('\n')
 
-    // cuando llamamos a la ia puede salir todo mal, por eso el trycatch
     try {
-        // temrino usaro para referirse a la charla que tenemos
-        // con la inteligencia artificial
-        const completion = await openai.chat.completions.create({
+   
+        res.setHeader('Contet-Type', 'text/plain; charset=utf-8') // streaming response
+        res.setHeader('Transfer-Encoding', 'chunked') // streaming response en partes y no todo de una sola
+
+        const stream = await openai.chat.completions.create({
             model: AI.MODEL,
             temperature: 0.3,
+            stream: true,
             messages: [
                 {
                     role: 'system',
@@ -61,21 +76,21 @@ aiRouter.get('/summary/:id', async (req, res) => {
             ]
         })
 
-        // chekear respuesta
-        console.log('AI summary generated for job:', id)
-
-        // crear sumario con respuesta de Openai
-        const summary = completion.choices?.[0]?.message?.content?.trim()
-
-        if (!summary) {
-            return res.status(502).json({ message: 'No summary generating' })
+        for await (const chunk of stream) {
+            const content = chunk.choices?.[0]?.delta?.content
+            if (content) {
+                res.write(content)
+            }
         }
 
-        // si todo sale bien, respondemos con el summary
-        return res.json({ summary })
+        res.end() // <-- cuando llega aqui la respuesta se termina, stream termina
 
     } catch (error) {
-        console.error(error)
-        return res.status(500).json({ message: 'Error generating summary' })
+        if(!res.headersSent) {
+            res.setHeader('Content-Type', 'application/json')
+            return res.status(500).json({ message: 'Error generating summary' })
+        }
+
+        return res.end() // <-- cuando llega aqui la respuesta se termina, stream termina
     }
 })
